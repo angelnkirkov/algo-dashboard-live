@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Algo Bot</title>
+<link rel="icon" id="fav" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22%232f5bd3%22/%3E%3C/svg%3E">
+<meta name="robots" content="noindex">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#14171c;--muted:#667085;--line:#e4e7ec;--pos:#12805c;--neg:#c4320a;--acc:#2f5bd3;--band:rgba(47,91,211,.10);--warnbg:rgba(196,50,10,.07)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1115;--card:#171a21;--ink:#e8eaee;--muted:#98a2b3;--line:#262b36;--pos:#3ccf91;--neg:#ff7a59;--acc:#7c9cff;--band:rgba(124,156,255,.12);--warnbg:rgba(255,122,89,.08)}}
+:root[data-theme="dark"]{--bg:#0f1115;--card:#171a21;--ink:#e8eaee;--muted:#98a2b3;--line:#262b36;--pos:#3ccf91;--neg:#ff7a59;--acc:#7c9cff;--band:rgba(124,156,255,.12);--warnbg:rgba(255,122,89,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:20px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:12.5px}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);margin-left:6px;vertical-align:2px}
+.pill.warn{color:var(--neg);border-color:var(--neg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi,.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.kpi{padding:12px 14px;min-width:0}
+.kpi .l{color:var(--muted);font-size:12px}
+.kpi .v{font-size:20px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .s{color:var(--muted);font-size:11.5px;margin-top:2px}
+.card{padding:14px;margin-bottom:14px}
+.card h2{font-size:14px;margin:0 0 10px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card h2 .sub{font-weight:400}
+.chartbox{position:relative;height:280px}
+/* LIVE account: amber accent, a stripe across the top and a filled LIVE badge - so it can't be mistaken for the demo */
+:root[data-kind="live"]{--acc:#b45309;--band:rgba(180,83,9,.10)}
+@media (prefers-color-scheme:dark){:root[data-kind="live"]:not([data-theme="light"]){--acc:#f59e0b;--band:rgba(245,158,11,.13)}}
+:root[data-kind="live"][data-theme="dark"]{--acc:#f59e0b;--band:rgba(245,158,11,.13)}
+:root[data-kind="live"] body{border-top:6px solid var(--acc)}
+.kind{display:inline-block;padding:2px 9px;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.06em;margin-left:8px;vertical-align:3px}
+.kind.demo{color:var(--muted);border:1px solid var(--line)}
+.kind.live{color:#fff;background:var(--acc)}
+#lock{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+#lock[hidden]{display:none}
+#lock form{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;width:100%;max-width:340px}
+#lock h2{font-size:16px;margin:0 0 4px}
+#lock input[type=password]{width:100%;margin:12px 0 8px;padding:10px 12px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px}
+#lock label{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+#lock button{margin-top:12px;width:100%;padding:10px;font:inherit;font-weight:600;color:#fff;background:var(--acc);border:0;border-radius:8px;cursor:pointer}
+#lockerr{color:var(--neg);font-size:13px;min-height:18px;margin-top:8px}
+.tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.tbl th{color:var(--muted);font-weight:500;text-align:left;font-size:12px;border-bottom:1px solid var(--line);padding:6px 8px;white-space:nowrap}
+.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td.n,.tbl th.n{text-align:right}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pos{color:var(--pos)}.neg{color:var(--neg)}.muted{color:var(--muted)}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;background:var(--acc)}
+.bar.dd>i{background:var(--neg)}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:flex;gap:10px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13px}
+.feed li.w{background:var(--warnbg)}
+.feed .tm{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;min-width:44px}
+.feed .tx{min-width:0;overflow-wrap:anywhere}
+.btn{background:none;border:1px solid var(--line);color:var(--acc);border-radius:8px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer;margin-top:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.two .card{margin-bottom:0}
+.twowrap{margin-bottom:14px}
+footer{color:var(--muted);font-size:12px;margin-top:8px}
+.hl{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px}
+.hl b{font-weight:600}
+.ok{color:var(--pos)}.bad{color:var(--neg)}
+.rows{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:13px}
+.rows .bar{margin-top:0}
+.up li .tx{font-size:13px}
+.up .tm{min-width:82px}
+.tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:6px;border:1px solid var(--line);color:var(--muted);margin-left:4px}
+@media (max-width:640px){
+  main{padding:14px 10px 40px}
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi{padding:10px 12px}.kpi .v{font-size:18px}
+  .chartbox{height:220px}
+  .tbl td,.tbl th{padding:6px 5px;font-size:12.5px}
+  .sm{display:none}
+  .two{grid-template-columns:1fr}
+  header .right{text-align:left!important}
+}
+</style>
+</head>
+<body>
+<div id="lock" hidden><form id="lockf" autocomplete="on">
+  <h2>Algo Bot <span class="kind live">LIVE</span></h2><div class="sub">This dashboard is private. Enter the password.</div>
+  <input type="text" name="username" value="algo-dashboard" autocomplete="username" hidden>
+  <input type="password" id="pw" autocomplete="current-password" required>
+  <label><input type="checkbox" id="remember"> Remember on this device</label>
+  <button type="submit" id="unlock">Unlock</button><div id="lockerr"></div>
+</form></div>
+<main>
+  <header>
+    <div><h1>Algo Bot<span id="kind" class="kind" hidden></span> <span id="state" class="pill">…</span></h1>
+      <div class="sub" id="upd">loading…</div></div>
+    <div class="sub right" style="text-align:right"><span id="acct">IC Markets</span> · read-only view<span id="lockbtn" hidden> · <a href="#" id="relock">lock</a></span><br><span id="plan"></span></div>
+  </header>
+  <section class="grid" id="kpis"></section>
+  <section class="card"><h2>Bot health <span class="sub" id="hsum"></span></h2><div class="hl" id="health"></div></section>
+  <section class="card"><h2>Coming up <span class="sub">today and tomorrow</span></h2><ul class="feed up" id="upc"></ul></section>
+  <section class="card"><h2>Equity</h2><div class="chartbox"><canvas id="eq"></canvas></div>
+    <div class="sub" style="margin-top:6px">Dashed line: the simulation's median path at half the backtested edge (<span id="exp"></span> a year), from the first recorded day.</div></section>
+  <section class="card"><h2>Waiting stop orders</h2><div class="scroll"><table class="tbl" id="pend"></table></div>
+    <div class="sub" style="margin-top:6px">Breakout entries resting at the broker. When one fills, the other side is cancelled; unfilled orders expire at the cut-off.</div></section>
+  <section class="card"><h2>Open positions <span class="sub" id="opensum"></span></h2><div class="scroll"><table class="tbl" id="open"></table></div></section>
+  <div class="two twowrap">
+    <section class="card"><h2>Risk right now <span class="sub">if every stop is hit</span></h2><div id="riskc"></div></section>
+    <section class="card"><h2>On track? <span class="sub">live vs backtest</span></h2><div class="scroll"><table class="tbl" id="track"></table></div>
+      <div class="sub" style="margin-top:6px">Expected = trades × backtest average R. Normal range = where 95% of results land by luck alone (±2 standard deviations). Outside it on the low side = worth a look. Judged from 10 trades.</div></section>
+  </div>
+  <section class="card"><h2>Activity <span class="sub">what the bot did and said</span></h2><ul class="feed" id="feed"></ul>
+    <button class="btn" id="more" hidden>Show all</button></section>
+  <section class="card"><h2>By setup (since start)</h2><div class="scroll"><table class="tbl" id="stats"></table></div>
+    <div class="sub" style="margin-top:6px">Backtest = average R per trade in the 2013–2026 replay with all costs. Live averages over a few trades swing a lot; compare after 30+ trades.</div></section>
+  <section class="card"><h2>Margin cap <span class="sub">entries it scaled down or skipped, per setup</span></h2><div class="scroll"><table class="tbl" id="mcut"></table></div></section>
+  <section class="card"><h2>Execution quality <span class="sub">how fills compare with the plan</span></h2><div class="scroll"><table class="tbl" id="xq"></table></div>
+    <div class="sub" style="margin-top:6px">Slippage = fill vs the planned price (stop level or the price sent), in R; negative = worse than planned. Stop-exit slippage = fill vs the stop-loss level (recorded from 11 Nov). Spread = cost of the spread at entry, in R. Spreads per fill = average slippage over entries and stop exits, divided by the average spread; the backtest assumed 0.5. Limits (replay 2013–2026): above "halve" half of the setup's edge is gone, above "off" all of it. A setup is judged from 30 trades, on its last 60. With the slippage guard on, the bot halves a setup's risk above "halve" and switches it off above "off" by itself (/slipreset in Telegram turns everything back on and starts measuring afresh).</div></section>
+  <div class="two twowrap">
+    <section class="card"><h2>Months</h2><div class="scroll"><table class="tbl" id="months"></table></div></section>
+    <section class="card"><h2>Costs paid <span class="sub">since start</span></h2><div id="costs"></div></section>
+  </div>
+  <section class="card"><h2>Recent trades</h2><div class="scroll"><table class="tbl" id="closed"></table></div>
+    <button class="btn" id="moretr" hidden>Show 40 more</button></section>
+  <footer>Times are shown in your device's time zone (<span id="tz"></span>), converted from broker server time (New York + 7h, <span id="srv"></span>). R = profit in units of the risk taken; "Best" = the most the trade was up, in R; "Worst" = the most it was down (recorded for trades opened after 10 Nov). Data refreshes every minute; the bot uploads every few minutes.</footer>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+let chart=null,cur="EUR",off=0,feedAll=false,nTr=20,last=null;
+const money=(x,d=2)=>x==null?"–":new Intl.NumberFormat("en-IE",{style:"currency",currency:cur,maximumFractionDigits:d,minimumFractionDigits:d}).format(x);
+const pct=(x,d=1)=>x==null||!isFinite(x)?"–":(x>=0?"+":"")+x.toFixed(d)+"%";
+const cls=x=>x==null?"":(x>0?"pos":(x<0?"neg":""));
+const p2=n=>String(n).padStart(2,"0");
+const loc=s=>new Date((s-off)*1000);
+const t=s=>{if(!s)return"–";const d=loc(s);return `${p2(d.getDate())}/${p2(d.getMonth()+1)} ${p2(d.getHours())}:${p2(d.getMinutes())}`};
+const tt=s=>{if(!s)return"–";const d=loc(s),n=loc(last?last.updated_server:s);return d.toDateString()===n.toDateString()?`${p2(d.getHours())}:${p2(d.getMinutes())}`:t(s)};   // today: time only
+const r2=x=>x==null?"–":(x>=0?"+":"")+x.toFixed(2)+"R";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function kpi(l,v,c="",extra=""){return `<div class="kpi"><div class="l">${l}</div><div class="v ${c}">${v}</div>${extra}</div>`}
+function exitCell(p){const k=p.keep?`<div class="sub">${esc(p.keep)}</div>`:"";
+  if(p.exit_at)return tt(p.exit_at)+k;const e=p.exit_rule;if(!e)return "–"+k;
+  if(e.approx&&e.max_exit)return `≈ ${tt(e.max_exit)}<div class="sub">${esc(e.rule)}</div>`+k;
+  return `signal<div class="sub">${esc(e.rule)}${e.max_exit?" · max "+t(e.max_exit):""}</div>`+k}
+function startEq(days,eq,fromIso){for(const [d,v] of days){if(d>=fromIso)return v}return eq}
+function render(d){
+  last=d; cur=d.currency||"EUR";
+  if(d.updated_server&&d.updated_utc)off=Math.round((d.updated_server-Date.parse(d.updated_utc)/1000)/900)*900;
+  $("#tz").textContent=Intl.DateTimeFormat().resolvedOptions().timeZone||"local";
+  $("#srv").textContent="now UTC"+(off>=0?"+":"")+(off/3600);
+  const pl=d.plan||{};
+  const sk=pl.skips||{}, skm=(sk.modules||[]).filter(x=>x.events.includes("fomc")).map(x=>x.module);
+  const fed=skm.length?" · Fed days off: "+skm.join(", ")+(sk.today_fomc?" (today!)":(sk.next_fomc?" (next "+sk.next_fomc.slice(5).split("-").reverse().join(".")+")":"")):"";
+  $("#plan").textContent=(pl.version||"")+(pl.stop_entries&&pl.stop_entries.length?" · stop entries: "+pl.stop_entries.join(", "):"")+(pl.lot_rounding?" · lots: "+pl.lot_rounding:"")+fed;
+  const now=Date.now()/1000, age=(now-Date.parse(d.updated_utc)/1000)/60;
+  $("#upd").textContent=`updated ${new Date(d.updated_utc).toLocaleString()} (${Math.round(age)} min ago)`;
+  const st=$("#state"); st.textContent=d.paused?"paused":(age>20?"no update for "+Math.round(age)+" min":"running");
+  st.className="pill"+((d.paused||age>20)?" warn":"");
+
+  // ---------- KPIs
+  const days=d.equity_days||[], eq=d.equity, first=days.length?days[0][1]:eq;
+  const today0=days.length?days[days.length-1][1]:eq, peak=Math.max(eq||0,...days.map(x=>x[1]));
+  const sd=loc(d.updated_server), dow=(sd.getDay()+6)%7;
+  const iso=x=>`${x.getFullYear()}-${p2(x.getMonth()+1)}-${p2(x.getDate())}`;
+  const monday=new Date(sd);monday.setDate(sd.getDate()-dow);
+  const wk0=startEq(days,eq,iso(monday)), mo0=startEq(days,eq,`${sd.getFullYear()}-${p2(sd.getMonth()+1)}-01`);
+  const m=d.margin_pct||0, ddNow=peak?100*(1-eq/peak):0, bw=d.backtest_worst_dd||29;
+  const cl=d.closed||[], Rs=cl.filter(c=>c.R!=null).map(c=>c.R);
+  const wins=cl.filter(c=>c.pnl>0), gp=wins.reduce((a,c)=>a+c.pnl,0), gl=-cl.filter(c=>c.pnl<0).reduce((a,c)=>a+c.pnl,0);
+  const avgR=Rs.length?Rs.reduce((a,b)=>a+b,0)/Rs.length:null;
+  const ro=d.risk_open||0;
+  $("#kpis").innerHTML=
+    kpi("Equity",money(eq),"",`<div class="s">balance ${money(d.balance,0)}</div>`)+
+    kpi("Today",pct(today0?100*(eq/today0-1):null,2),cls(eq-today0),`<div class="s">${money(eq-today0)}</div>`)+
+    kpi("This week",pct(wk0?100*(eq/wk0-1):null,1),cls(eq-wk0),`<div class="s">${money(eq-wk0,0)}</div>`)+
+    kpi("This month",pct(mo0?100*(eq/mo0-1):null,1),cls(eq-mo0),`<div class="s">${money(eq-mo0,0)}</div>`)+
+    kpi("Since start",pct(first?100*(eq/first-1):null,1),cls(eq-first),`<div class="s">${money(eq-first,0)} · ${t(d.started).slice(0,5)}</div>`)+
+    kpi("From peak",pct(-ddNow,1),ddNow>0.05?"neg":"",`<div class="bar dd"><i style="width:${Math.min(100,100*ddNow/bw)}%"></i></div><div class="s">backtest worst −${bw.toFixed(0)}%</div>`)+
+    kpi("Open risk",money(ro,0),"",`<div class="s">${eq?(100*ro/eq).toFixed(1):"–"}% if every stop is hit</div>`)+
+    kpi("Margin used",m.toFixed(0)+"%","",`<div class="bar"><i style="width:${Math.min(100,100*m/d.margin_cap)}%"></i></div><div class="s">cap ${d.margin_cap}% · crypto ${d.crypto_cap}%</div>`)+
+    kpi("Trades",String(cl.length),"",`<div class="s">${cl.length?Math.round(100*wins.length/cl.length):"–"}% won · avg ${r2(avgR)} · PF ${gl?(gp/gl).toFixed(2):"–"}</div>`)+
+    kpi("Vol brake","×"+(d.brake??1).toFixed(2),"",`<div class="s">${(d.brake??1)<0.999?"sizes cut: account swinging more than "+Math.round(100*((d.risk||{}).brake_target||.4))+"%/yr":"full size"} · last ${(d.risk||{}).brake_days||60} days</div>`);
+
+  // ---------- health
+  const h=d.health||{}, hbAge=h.heartbeat&&h.now?Math.round((h.now-h.heartbeat)/60):null;
+  const hOk=(hbAge!=null&&hbAge<15)&&h.mt5_connected!==false&&!(h.rejects_7d>0);
+  $("#hsum").innerHTML=hOk?'<span class="ok">all good</span>':'<span class="bad">check</span>';
+  $("#health").innerHTML=[
+    `<span>Heartbeat <b class="${hbAge!=null&&hbAge<15?"ok":"bad"}">${hbAge==null?"–":hbAge+" min ago"}</b></span>`,
+    `<span>MT5 <b class="${h.mt5_connected===false?"bad":"ok"}">${h.mt5_connected==null?"–":(h.mt5_connected?"connected":"DISCONNECTED")}</b></span>`,
+    (()=>{const w=h.watchdog||{}; if(!w.on)return `<span>Watchdog <b class="muted">off</b></span>`;
+      const a=w.age==null?null:Math.round(w.age/60), ok=a!=null&&a<=2*Math.round((w.every||300)/60)+1;
+      return `<span>Watchdog <b class="${ok?"ok":"bad"}">${a==null?"no ping yet":"pinged "+a+" min ago"}</b></span>`})(),
+    `<span>Restarts (7 days) <b>${h.restarts_7d??"–"}</b>${h.last_restart?` <span class="muted">last ${t(h.last_restart)}</span>`:""}</span>`,
+    `<span>Warnings (7 days) <b class="${h.warnings_7d?"bad":""}">${h.warnings_7d??"–"}</b></span>`,
+    `<span>Rejected orders (7 days) <b class="${h.rejects_7d?"bad":""}">${h.rejects_7d??"–"}</b></span>`,
+    h.last_warning?`<span class="muted" style="flex-basis:100%">Last warning ${t(h.last_warning[0])}: ${esc(h.last_warning[1])}</span>`:""].join("");
+
+  // ---------- coming up
+  const up=(d.upcoming||[]).filter(e=>e.t>=(d.updated_server||0)-1800);
+  $("#upc").innerHTML=up.length?up.map(e=>`<li><span class="tm">${tt(e.t)}</span><span class="tx">${esc(e.x)}</span></li>`).join("")
+    :`<li><span class="muted">Nothing scheduled.</span></li>`;
+
+  // ---------- risk right now
+  const rk=d.risk||{}, gr=rk.groups||{}, gmax=Math.max(1,...Object.values(gr));
+  const dsx=rk.ds_extra||0, dayPct=rk.day_start?100*((eq+dsx)/(rk.day_start+dsx)-1):null, dsp=rk.daily_stop_pct;
+  $("#riskc").innerHTML=`<div class="rows">`+
+    (Object.keys(gr).length?Object.entries(gr).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span>${k}</span><div class="bar"><i style="width:${100*v/gmax}%"></i></div><span class="n">${money(v,0)} <span class="muted">${eq?(100*v/eq).toFixed(1):"–"}%</span></span>`).join("")
+      :`<span class="muted">No open risk</span><span></span><span></span>`)+
+    (rk.extra_balance?`<span>Sized as</span><span class="muted">IC equity + ${money(rk.extra_balance,0)} = ${money(eq+rk.extra_balance,0)}</span><span></span>`:"")+
+    `<span>Long / short</span><span class="muted">${money(rk.long||0,0)} / ${money(rk.short||0,0)}</span><span></span>`+
+    (dsp?`<span>Today vs daily stop</span><div class="bar dd"><i style="width:${dayPct!=null&&dayPct<0?Math.min(100,100*-dayPct/dsp):0}%"></i></div><span class="n ${cls(dayPct)}">${pct(dayPct,1)} <span class="muted">/ −${dsp}%</span></span>`:"")+
+    `</div>`+(rk.day_stopped?`<div class="bad" style="margin-top:8px">🛑 Daily loss stop active: no new trades until tomorrow.</div>`:"");
+
+  // ---------- on track?
+  const bsd=d.backtest_sd||{}, btr=d.backtest_r||{}, rowsT=[]; let tn=0,tR=0,tE=0,tV=0;
+  for(const [k,s0] of Object.entries(d.stats||{})){if(!s0.n||btr[k]==null)continue;
+    const e=s0.n*btr[k], sd=(bsd[k]||1)*Math.sqrt(s0.n); tn+=s0.n;tR+=s0.R;tE+=e;tV+=sd*sd;rowsT.push([k,s0.n,s0.R,e,sd])}
+  const verdict=(R,e,sd,n)=>n<10?'<span class="muted">few trades</span>':R<e-2*sd?'<span class="bad">below normal</span>':(R>e+2*sd?'<span class="ok">above normal</span>':'<span class="ok">✓ normal</span>');
+  const rowT=(k,n,R,e,sd,b)=>`<tr><td>${b?"<b>"+k+"</b>":k}</td><td class="n">${n}</td><td class="n ${cls(R)}">${r2(R)}</td><td class="n muted">${r2(e)}</td><td class="n sm muted">${r2(e-2*sd)} … ${r2(e+2*sd)}</td><td>${verdict(R,e,sd,n)}</td></tr>`;
+  const trk=d.track&&d.track.rows&&d.track.rows.length?d.track:null;
+  if(trk){
+    const stName={few:'<span class="muted">few trades</span>',normal:'<span class="ok">✓ normal</span>',worst5:'<span class="bad">worst 5% of the backtest</span>',worst1:'<span class="bad"><b>worst 1% of the backtest</b></span>'};
+    let n=0,R=0,E=0,V=0; for(const x of trk.rows){n+=x.n;R+=x.R;E+=x.exp;V+=x.n*(x.sd||1)*(x.sd||1)}
+    const sdA=Math.sqrt(V), q5=E-1.645*sdA, q1=E-2.326*sdA, stA=n<(trk.min_trades||10)?"few":(R<=q1?"worst1":(R<=q5?"worst5":"normal"));
+    const row=(k,x,b)=>`<tr><td>${b?"<b>"+k+"</b>":k}</td><td class="n">${x.n}</td><td class="n ${cls(x.R)}">${r2(x.R)}</td><td class="n muted">${r2(x.exp)}</td><td class="n sm muted">${r2(x.q05)}</td><td class="n sm muted">${r2(x.q01)}</td><td>${stName[x.status]||""}</td></tr>`;
+    $("#track").innerHTML=`<tr><th>Setup</th><th class="n">Trades</th><th class="n">Live R</th><th class="n">Expected</th><th class="n sm">Worst 5% level</th><th class="n sm">Worst 1% level</th><th></th></tr>`+
+      row("All setups",{n:n,R:R,exp:E,q05:q5,q01:q1,status:stA},true)+trk.rows.map(x=>row(x.module,x)).join("")+
+      `<tr><td colspan="7" class="sm muted">Levels = the total R that only 5% / 1% of the backtest's stretches of that many trades fell below. A setup at or below a level is flagged; the bot does not change its risk.${trk.on?"":" Telegram alerts are off (tracking: enabled: false)."}</td></tr>`;
+  } else
+  $("#track").innerHTML=rowsT.length?`<tr><th>Setup</th><th class="n">Trades</th><th class="n">Live R</th><th class="n">Expected</th><th class="n sm">Normal range</th><th></th></tr>`+
+    rowT("All setups",tn,tR,tE,Math.sqrt(tV),true)+rowsT.sort((a,b)=>b[1]-a[1]).map(x=>rowT(...x)).join("")
+    :`<tr><td class="muted">No closed trades yet</td></tr>`;
+
+  // ---------- margin cap cuts
+  const mc_=d.margin_cuts||[];
+  $("#mcut").innerHTML=mc_.length?`<tr><th>Setup</th><th class="n">Scaled (7 days)</th><th class="n">Skipped (7 days)</th><th class="n">Scaled (30 days)</th><th class="n">Skipped (30 days)</th><th class="n">Avg size kept when scaled</th><th>Cap</th></tr>`+
+    mc_.map(x=>`<tr><td>${esc(x.module)}</td><td class="n">${x.scaled7}</td><td class="n ${x.skipped7?"bad":""}">${x.skipped7}</td><td class="n">${x.scaled30}</td><td class="n">${x.skipped30}</td><td class="n">${x.kept==null?"–":Math.round(100*x.kept)+"%"}</td><td class="sm muted">${x.crypto>=(x.scaled30+x.skipped30)/2?"crypto cap":"total cap"}</td></tr>`).join("")+
+    `<tr><td colspan="7" class="sm muted">An entry retried during the day counts once (per market, side and day). Counted since the bot's update of 14 Nov.</td></tr>`
+    :'<tr><td class="muted">Nothing scaled or skipped by the margin cap in the last 30 days (counted since the update of 14 Nov)</td></tr>';
+  // ---------- execution quality
+  const xs=(d.closed||[]).filter(c=>c.xq), agg={}, lim=d.slip_limits||{}, minN=d.slip_min_trades||30;
+  const sgS=((d.slip_guard||{}).setups)||{}, win=d.slip_window||60, cntM={};
+  for(const c of [...xs].reverse()){                       // per setup: the last `win` trades since its last reset (as the bot counts)
+    const sn=(sgS[c.module]||{}).since||0; cntM[c.module]=(cntM[c.module]||0)+1;
+    c._m=(c.closed>sn&&cntM[c.module]<=win)}
+  for(const c of xs){for(const k of ["Stop-order fills","Market entries",c.module]){
+    if(k===c.module&&!c._m)continue;
+    if(k==="Stop-order fills"&&c.xq.t!=="stop")continue; if(k==="Market entries"&&c.xq.t!=="market")continue;
+    const a=agg[k]||(agg[k]={n:0,sl:0,sp:0,ns:0,xs:0,nx:0}); a.n++; a.sl+=(c.xq.slip_r||0); if(c.xq.spr_r!=null){a.sp+=c.xq.spr_r;a.ns++}
+    if(c.xq.xslip_r!=null){a.xs+=c.xq.xslip_r;a.nx++}}}
+  const order=["Stop-order fills","Market entries",...Object.keys(agg).filter(k=>!k.includes(" fills")&&k!=="Market entries").sort()];
+  const perFill=a=>{const sp=a.ns?a.sp/a.ns:0; return sp>0?(a.sl+a.xs)/(a.n+a.nx)/sp:null};          // slippage per fill, in spreads
+  const status=(k,a,pf)=>{const L=lim[k]; if(!L)return `<span class="muted">not sensitive</span>`;
+    if(pf==null)return "";
+    const g=(d.slip_guard||{}), sc=((g.setups||{})[k]||{}).scale;
+    if(g.on&&sc===0)return `<span class="neg"><b>switched off by the bot</b></span>`;
+    if(g.on&&sc===0.5)return `<span class="neg">risk halved by the bot</span>`;
+    if(a.n<minN)return `<span class="muted">${a.n} of ${minN} trades</span>`;
+    return pf>L[1]?`<span class="neg"><b>above the off limit</b></span>`:pf>L[0]?`<span class="neg">above the halve limit</span>`:`<span class="pos">✓ within limits</span>`};
+  $("#xq").innerHTML=xs.length?`<tr><th>Group</th><th class="n">Trades</th><th class="n">Entry slippage</th><th class="n">Stop-exit slippage</th><th class="n">Avg spread</th><th class="n">Spreads per fill</th><th class="n sm">Limits: halve / off</th><th></th></tr>`+
+    order.filter(k=>agg[k]).map(k=>{const a=agg[k],sl=-a.sl/a.n,pf=perFill(a),L=lim[k],grp=(k==="Stop-order fills"||k==="Market entries");
+      return `<tr><td>${grp?"<b>"+k+"</b>":k}</td><td class="n">${a.n}</td><td class="n ${sl<-0.02?"neg":""}">${(sl>=0?"+":"")+sl.toFixed(3)}R</td>`+
+        `<td class="n muted">${a.nx?((-a.xs/a.nx)>=0?"+":"")+(-a.xs/a.nx).toFixed(3)+"R ("+a.nx+")":"–"}</td>`+
+        `<td class="n muted">${a.ns?(a.sp/a.ns).toFixed(3)+"R":"–"}</td><td class="n">${pf==null?"–":pf.toFixed(1)}</td>`+
+        `<td class="n sm muted">${grp?"":L?L[0]+" / "+L[1]:"–"}</td><td class="sm">${grp?"":status(k,a,pf)}</td></tr>`}).join("")
+    :`<tr><td class="muted">Collected from now on: each new trade records its fill and spread.</td></tr>`;
+
+  // ---------- chart
+  $("#exp").textContent=pct(100*d.expected_median_year,0);
+  const labels=days.map(x=>x[0].slice(5).split("-").reverse().join("/")), vals=days.map(x=>x[1]);
+  if(eq!=null){labels.push("now");vals.push(eq)}
+  const g=1+d.expected_median_year, exp=days.map((x,i)=>first*Math.pow(g,i/365));
+  if(eq!=null)exp.push(first*Math.pow(g,days.length/365));
+  const ds=[{label:"Equity",data:vals,borderColor:css("--acc"),backgroundColor:css("--band"),fill:true,pointRadius:0,tension:.15,borderWidth:2},
+            {label:"Simulation median",data:exp,borderColor:css("--muted"),borderDash:[5,4],pointRadius:0,borderWidth:1.2,fill:false}];
+  if(window.Chart&&Chart.prototype&&Chart.prototype.update){
+    if(chart){chart.data.labels=labels;chart.data.datasets=ds;chart.update("none")}
+    else chart=new Chart($("#eq"),{type:"line",data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+      plugins:{legend:{labels:{color:css("--muted"),boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+": "+money(c.parsed.y)}}},
+      scales:{x:{ticks:{color:css("--muted"),maxTicksLimit:6},grid:{display:false}},y:{ticks:{color:css("--muted"),callback:v=>money(v,0)},grid:{color:css("--line")}}}}});
+  }
+
+  // ---------- stop orders
+  const pe=d.pending||[];
+  $("#pend").innerHTML=pe.length?`<tr><th>Setup</th><th>Order</th><th class="n">Level</th><th class="n">Stop</th><th class="n sm">Lots</th><th class="sm">Placed</th><th>Expires</th></tr>`+
+    pe.map(o=>`<tr><td>${o.module}<div class="sub">${o.sym}</div></td><td>${o.side}</td><td class="n">${o.level}</td><td class="n">${o.sl}</td><td class="n sm">${o.lots??"–"}</td><td class="sm">${t(o.placed)}</td><td>${tt(o.cancel_at)}</td></tr>`).join("")
+    :`<tr><td class="muted">None waiting</td></tr>`;
+
+  // ---------- open positions
+  const op=d.open||[], upl=op.reduce((a,p)=>a+(p.pnl||0),0);
+  $("#opensum").innerHTML=op.length?`${op.length} · <span class="${cls(upl)}">${money(upl)}</span>`:"";
+  $("#open").innerHTML=op.length?`<tr><th>Setup</th><th>Side</th><th class="n sm">Lots</th><th class="n sm">Entry</th><th class="n">Stop</th><th class="n sm">Target</th><th class="n">P/L</th><th class="n">Best</th><th class="n">Worst</th><th class="sm">Opened</th><th>Exit</th></tr>`+
+    op.map(p=>`<tr><td>${p.module}<div class="sub">${p.sym}</div></td><td>${p.side}</td><td class="n sm">${p.lots}</td><td class="n sm">${p.entry}</td><td class="n">${p.sl}${p.be?" <span class='muted'>(BE)</span>":""}</td><td class="n sm">${p.tp??"–"}</td><td class="n ${cls(p.pnl)}">${money(p.pnl)}</td><td class="n muted">${r2(p.best)}</td><td class="n muted">${p.worst==null?"–":r2(p.worst)}</td><td class="sm">${t(p.opened)}</td><td>${exitCell(p)}</td></tr>`).join("")
+    :`<tr><td class="muted">No open positions</td></tr>`;
+
+  // ---------- activity
+  const ev=d.events||[], showN=feedAll?ev.length:10;
+  $("#feed").innerHTML=ev.length?ev.slice(0,showN).map(e=>`<li class="${e.w?"w":""}"><span class="tm">${tt(e.t)}</span><span class="tx">${esc(e.x)}</span></li>`).join("")
+    :`<li><span class="muted">Nothing yet – fills, skips, stop orders and alerts appear here.</span></li>`;
+  $("#more").hidden=ev.length<=10; $("#more").textContent=feedAll?"Show fewer":`Show all ${ev.length}`;
+
+  // ---------- by setup
+  const mods=Object.keys(d.modules||{}), bt=d.backtest_r||{};
+  $("#stats").innerHTML=`<tr><th>Setup</th><th class="n sm">Risk</th><th class="n">Trades</th><th class="n sm">Win %</th><th class="n">Avg R</th><th class="n">Backtest</th><th class="n sm">Total R</th><th class="n">P/L</th></tr>`+
+    mods.map(k=>{const s=(d.stats||{})[k]||{n:0,wins:0,R:0,pnl:0},mo=d.modules[k],a=s.n?s.R/s.n:null,b=bt[k];
+      return `<tr><td>${k}${mo.on?"":" <span class='muted'>(off)</span>"}</td><td class="n sm">${mo.risk}%</td><td class="n">${s.n}</td><td class="n sm">${s.n?Math.round(100*s.wins/s.n):"–"}</td><td class="n ${cls(a)}">${a==null?"–":r2(a)}</td><td class="n muted">${b==null?"–":r2(b)}</td><td class="n sm ${cls(s.R)}">${s.R>=0?"+":""}${s.R.toFixed(2)}</td><td class="n ${cls(s.pnl)}">${money(s.pnl,0)}</td></tr>`}).join("");
+
+  // ---------- months
+  const ms={}; for(const [dd,v] of days){const k=dd.slice(0,7);if(!(k in ms))ms[k]=v}
+  const keys=Object.keys(ms).sort();
+  $("#months").innerHTML=keys.length?`<tr><th>Month</th><th class="n">Return</th><th class="n">P/L</th></tr>`+
+    keys.slice().reverse().map((k,i,arr)=>{const a=ms[k],nx=keys.indexOf(k)+1,b=nx<keys.length?ms[keys[nx]]:eq,r=100*(b/a-1);
+      return `<tr><td>${new Date(k+"-15").toLocaleString("en-GB",{month:"short",year:"numeric"})}${nx<keys.length?"":" <span class='muted'>(so far)</span>"}</td><td class="n ${cls(r)}">${pct(r)}</td><td class="n ${cls(b-a)}">${money(b-a,0)}</td></tr>`}).join("")
+    :`<tr><td class="muted">–</td></tr>`;
+
+  // ---------- costs
+  const c=d.costs;
+  $("#costs").innerHTML=c?`<table class="tbl"><tr><td>Commission</td><td class="n ${cls(c.commission)}">${money(c.commission)}</td></tr>
+    <tr><td>Swaps (overnight)</td><td class="n ${cls(c.swap)}">${money(c.swap)}</td></tr>
+    <tr><td><b>Total</b></td><td class="n ${cls(c.commission+c.swap)}"><b>${money(c.commission+c.swap)}</b></td></tr></table>
+    <div class="sub" style="margin-top:8px">Spreads aren't listed: they're inside the fill prices. Commission is only on gold and USDJPY; indices and BTC trade commission-free.</div>`
+    :`<div class="muted">Not available yet.</div>`;
+
+  // ---------- recent trades
+  const rc=cl.slice().reverse();
+  $("#closed").innerHTML=rc.length?`<tr><th>Closed</th><th>Setup</th><th class="sm">Side</th><th class="n">P/L</th><th class="n">R</th><th class="n">Best</th><th class="n">Worst</th><th class="sm">Reason</th></tr>`+
+    rc.slice(0,nTr).map(c=>`<tr><td>${tt(c.closed)}</td><td>${c.module}<div class="sub">${c.sym}</div></td><td class="sm">${c.side>0?"BUY":"SELL"}</td><td class="n ${cls(c.pnl)}">${money(c.pnl)}</td><td class="n ${cls(c.R)}">${c.R==null?"–":(c.R>=0?"+":"")+c.R.toFixed(2)}</td><td class="n muted">${c.mfe==null?"–":r2(c.mfe)}</td><td class="n muted">${c.mae==null?"–":r2(c.mae)}</td><td class="muted sm">${c.reason}</td></tr>`).join("")
+    :`<tr><td class="muted">No closed trades yet</td></tr>`;
+  $("#moretr").hidden=rc.length<=nTr;
+}
+$("#more").onclick=()=>{feedAll=!feedAll;if(last)render(last)};
+$("#moretr").onclick=()=>{nTr+=40;if(last)render(last)};
+// Read data.json straight from the repo (raw.githubusercontent.com), so the page doesn't wait for GitHub Pages to rebuild
+// the site after every upload; fall back to the Pages copy. owner.github.io/repo/ -> owner/repo
+function rawUrls(){const h=location.hostname,seg=location.pathname.split("/").filter(Boolean);
+  if(!h.endsWith(".github.io")||!seg.length)return [];
+  const b=`https://raw.githubusercontent.com/${h.split(".")[0]}/${seg[0]}/`;return ["data","main"].map(x=>`${b}${x}/data.json?t=${Date.now()}`)}
+async function tryJson(u){try{const r=await fetch(u,{cache:"no-store"});return r.ok?await r.json():null}catch(e){return null}}
+// Private mode: the bot uploads only data.enc (AES-256-GCM, key = PBKDF2-SHA256 of the password). The password never
+// leaves this page; with "remember" the derived key (not the password) is kept in this browser's storage.
+const b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const b64e=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+const AAD=new TextEncoder().encode("algo-dashboard v1");
+let key=null,encMode=false,unlockWait=null;
+function store(){try{return window.localStorage}catch(e){return null}}
+async function deriveKey(pw,salt,iter){
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const bits=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt,iterations:iter},base,256);
+  return new Uint8Array(bits)}
+async function decrypt(raw,env){
+  const k=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(env.iv),additionalData:AAD},k,b64d(env.ct));
+  return JSON.parse(new TextDecoder().decode(pt))}
+function askPassword(env){                    // resolves with a key that opens env
+  $("#lock").hidden=false;$("#pw").focus();
+  return new Promise(res=>{$("#lockf").onsubmit=async ev=>{ev.preventDefault();
+    $("#lockerr").textContent="";$("#unlock").disabled=true;$("#unlock").textContent="Checking…";
+    try{const raw=await deriveKey($("#pw").value,b64d(env.salt),env.iter);await decrypt(raw,env);
+      if($("#remember").checked){const s=store();try{s&&s.setItem("algoKey:"+env.salt,b64e(raw))}catch(e){}}
+      $("#pw").value="";$("#lock").hidden=true;res(raw)}
+    catch(e){$("#lockerr").textContent="Wrong password - try again."}
+    finally{$("#unlock").disabled=false;$("#unlock").textContent="Unlock"}}})}
+async function openEnv(env){
+  if(!key){const s=store();let k=null;try{k=s&&s.getItem("algoKey:"+env.salt)}catch(e){}
+    if(k){try{const raw=b64d(k);await decrypt(raw,env);key=raw}catch(e){try{s.removeItem("algoKey:"+env.salt)}catch(_){}}}}
+  if(!key){unlockWait=unlockWait||askPassword(env);key=await unlockWait;unlockWait=null}
+  try{return await decrypt(key,env)}catch(e){key=null;return openEnv(env)}}
+function setKind(k){                 // "live" or "demo": colours, badge, tab title and icon
+  if(document.documentElement.dataset.kind===k)return;
+  document.documentElement.dataset.kind=k;const live=k==="live";
+  const b=$("#kind");b.hidden=false;b.textContent=live?"LIVE":"DEMO";b.className="kind "+k;
+  document.title=live?"LIVE · Algo Bot":"Demo · Algo Bot";
+  const col=live?"%23f59e0b":"%232f5bd3";
+  $("#fav").href=`data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22${col}%22/%3E%3C/svg%3E`;
+  if(chart){chart.destroy();chart=null}}
+async function getData(){            // the newest of: data branch, main branch, the Pages copy
+  const enc=(await Promise.all([...rawUrls().map(u=>u.replace("/data.json","/data.enc")),"data.enc?t="+Date.now()].map(tryJson))).filter(x=>x&&x.ct);
+  if(enc.length){encMode=true;$("#lockbtn").hidden=false;setKind("live");
+    const all=[];for(const e of enc){try{all.push(await openEnv(e))}catch(_){}}
+    const ok=all.filter(x=>x&&x.updated_utc);if(!ok.length)throw new Error("could not decrypt the data");
+    return ok.sort((a,b)=>a.updated_utc<b.updated_utc?1:-1)[0]}
+  const all=(await Promise.all([...rawUrls(),"data.json?t="+Date.now()].map(tryJson))).filter(x=>x&&x.updated_utc);
+  if(!all.length)throw new Error("no data.json found");
+  return all.sort((a,b)=>a.updated_utc<b.updated_utc?1:-1)[0]}
+$("#relock").onclick=ev=>{ev.preventDefault();key=null;const s=store();
+  try{if(s)Object.keys(s).filter(k=>k.startsWith("algoKey:")).forEach(k=>s.removeItem(k))}catch(e){}location.reload()};
+async function load(){try{const a=await getData();
+  setKind(a.account_kind==="live"?"live":"demo");
+  $("#acct").textContent=a.account_kind==="live"?"IC Markets LIVE account":"IC Markets demo account";
+  if(!last||!a.updated_utc||!last.updated_utc||a.updated_utc>=last.updated_utc)render(a)}catch(e){$("#upd").textContent="could not load the data – "+e}}
+load();setInterval(load,60000);
+</script>
+</body>
+</html>

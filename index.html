@@ -45,6 +45,9 @@ h1{font-size:20px;margin:0;letter-spacing:-.01em}
 #lock label{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}
 #lock button{margin-top:12px;width:100%;padding:10px;font:inherit;font-weight:600;color:#fff;background:var(--acc);border:0;border-radius:8px;cursor:pointer}
 #lockerr{color:var(--neg);font-size:13px;min-height:18px;margin-top:8px}
+main.waiting > section, main.waiting > div.two, main.waiting > footer{display:none}
+#waitcard{display:none}
+main.waiting #waitcard{display:block}
 .tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .tbl th{color:var(--muted);font-weight:500;text-align:left;font-size:12px;border-bottom:1px solid var(--line);padding:6px 8px;white-space:nowrap}
 .tbl td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -98,6 +101,7 @@ footer{color:var(--muted);font-size:12px;margin-top:8px}
       <div class="sub" id="upd">loading…</div></div>
     <div class="sub right" style="text-align:right"><span id="acct">IC Markets</span> · read-only view<span id="lockbtn" hidden> · <a href="#" id="relock">lock</a></span><br><span id="plan"></span></div>
   </header>
+  <div class="card" id="waitcard"><h2>Not started yet</h2><div id="waitmsg" class="sub"></div></div>
   <section class="grid" id="kpis"></section>
   <section class="card"><h2>Bot health <span class="sub" id="hsum"></span></h2><div class="hl" id="health"></div></section>
   <section class="card"><h2>Coming up <span class="sub">today and tomorrow</span></h2><ul class="feed up" id="upc"></ul></section>
@@ -389,6 +393,12 @@ $("#relock").onclick=ev=>{ev.preventDefault();key=null;const s=store();
   try{if(s)Object.keys(s).filter(k=>k.startsWith("algoKey:")).forEach(k=>s.removeItem(k))}catch(e){}location.reload()};
 async function load(){try{const a=await getData();
   setKind(a.account_kind==="live"?"live":"demo");
+  if(a.waiting){                     // placeholder until the bot's first upload (no numbers at all)
+    $("main").classList.add("waiting");$("#state").textContent="waiting";
+    $("#acct").textContent=a.account_kind==="live"?"IC Markets LIVE account":"IC Markets demo account";
+    $("#waitmsg").textContent=a.message||"The bot has not uploaded any data yet.";
+    $("#upd").textContent="dashboard set up "+new Date(a.updated_utc).toLocaleString();return}
+  $("main").classList.remove("waiting");
   $("#acct").textContent=a.account_kind==="live"?"IC Markets LIVE account":"IC Markets demo account";
   if(!last||!a.updated_utc||!last.updated_utc||a.updated_utc>=last.updated_utc)render(a)}catch(e){$("#upd").textContent="could not load the data – "+e}}
 load();setInterval(load,60000);

@@ -380,7 +380,37 @@ function setKind(k){                 // "live" or "demo": colours, badge, tab ti
   const col=live?"%23f59e0b":"%232f5bd3";
   $("#fav").href=`data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%227%22 fill=%22${col}%22/%3E%3C/svg%3E`;
   if(chart){chart.destroy();chart=null}}
-async function getData(){            // the newest of: data branch, main branch, the Pages copy
+// Fresh data first through GitHub's API (contents of the data branch): raw.githubusercontent.com caches files for up to
+// 5 minutes and ignores ?t=, the API answers within about a minute. The browser revalidates with the ETag, so unchanged
+// data costs a "304" that doesn't count against the API's 60-an-hour limit for visitors. Any API problem -> the old way.
+let fileMode=null,apiPause=0;         // fileMode: "enc" / "json" once known (so only one file is asked for each minute)
+function repoInfo(){const h=location.hostname,seg=location.pathname.split("/").filter(Boolean);
+  return h.endsWith(".github.io")&&seg.length?{owner:h.split(".")[0],repo:seg[0]}:null}
+async function apiGet(file){         // parsed JSON, null if the file isn't there, undefined if the API can't be used now
+  const r=repoInfo();if(!r||Date.now()<apiPause)return undefined;
+  try{const res=await fetch(`https://api.github.com/repos/${r.owner}/${r.repo}/contents/${file}?ref=data`,
+      {headers:{Accept:"application/vnd.github.raw"},cache:"no-cache"});
+    if(res.status===404)return null;
+    if(!res.ok){apiPause=Date.now()+10*60000;return undefined}   // rate limit or error: raw files for 10 minutes
+    return await res.json()}catch(e){return undefined}}
+let apiLast=0,apiData;                 // the API is asked at most every 3 minutes (20 calls an hour per open page)
+async function viaApi(){
+  if(Date.now()-apiLast<180000)return apiData;
+  apiLast=Date.now();apiData=await viaApi1();return apiData}
+async function viaApi1(){
+  if(fileMode!=="json"){const e=await apiGet("data.enc");
+    if(e&&e.ct){fileMode="enc";encMode=true;$("#lockbtn").hidden=false;setKind("live");return await openEnv(e)}
+    if(e===undefined)return undefined}
+  const j=await apiGet("data.json");
+  if(j&&j.updated_utc){fileMode="json";return j}
+  return undefined}
+async function getData(){            // the API copy if it works, else the newest of: data branch, main branch, the Pages copy
+  const fresh=await viaApi().catch(()=>undefined);
+  const rawd=await rawData().catch(()=>undefined);
+  const c=[fresh,rawd].filter(x=>x&&x.updated_utc);
+  if(!c.length)throw new Error("no data found");
+  return c.sort((a,b)=>a.updated_utc<b.updated_utc?1:-1)[0]}
+async function rawData(){
   const enc=(await Promise.all([...rawUrls().map(u=>u.replace("/data.json","/data.enc")),"data.enc?t="+Date.now()].map(tryJson))).filter(x=>x&&x.ct);
   if(enc.length){encMode=true;$("#lockbtn").hidden=false;setKind("live");
     const all=[];for(const e of enc){try{all.push(await openEnv(e))}catch(_){}}
